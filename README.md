@@ -1,4 +1,4 @@
-# Secure-NFC-Asset-Tracking
+# Secure NFC Asset Tracking for Mission-Critical Equipment
 
 Copyright (c) 2026 Brian, Bri4nHoll4nd. All rights reserved.
 
