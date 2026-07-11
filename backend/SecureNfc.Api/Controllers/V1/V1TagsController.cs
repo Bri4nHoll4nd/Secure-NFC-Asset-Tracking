@@ -5,15 +5,14 @@ namespace SecureNfc.Api.Controllers.V1
 {
     [ApiController]
     [Route("api/1.0/[controller]")]
-    public class V1ScansController : ControllerBase
+    public class V1TagsController : ControllerBase
     {
-        [HttpPost]
-        public IActionResult ReceiveScan(V1ScanRequest request)
+        [HttpPost("ScanTag")]
+        public IActionResult ReceiveScan(V1TagScanRequest request)
         {
             Console.WriteLine("Scan received: ");
             Console.WriteLine($"Tag UID: {request.TagUid}");
             Console.WriteLine($"Tag ID: {request.TagId}");
-            Console.WriteLine($"Tag Type: {request.TagType}");
             Console.WriteLine($"Tag Version: {request.TagVersion}");
             Console.WriteLine($"Tag Signature: {request.TagSignature}");
 
@@ -22,9 +21,20 @@ namespace SecureNfc.Api.Controllers.V1
                 message = "Scan received",
                 tagUid = request.TagUid,
                 tagId = request.TagId,
-                tagType = request.TagType,
                 tagVersion = request.TagVersion,
                 tagSignature = request.TagSignature
+            });
+        }
+
+        [HttpPost("ScanTagUid")]
+        public IActionResult Scan(V1TagUidScanRequest request)
+        {
+            Console.WriteLine($"Recived tag: {request.TagUid}");
+
+            return Ok(new
+            {
+                message = "Scan received",
+                tagUid = request.TagUid
             });
         }
     }

@@ -3,11 +3,15 @@
 #include <array>
 #include <cstdint>
 
-struct TagData {
-    std::array<uint8_t, 10> uid{};
-    uint8_t length = 0;
+struct TagWriteData {
     std::string tagId;
-    std::string tagType;
+    std::string tagVersion;
+    std::string tagSignature;
+};
+
+struct TagReadData {
+    std::string tagUid;
+    std::string tagId;
     std::string tagVersion;
     std::string tagSignature;
 };

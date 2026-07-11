@@ -78,15 +78,6 @@ async Task scanOperator()
         return;
     }
 
-    Console.WriteLine("Enter Operator Type:");
-    var operatorType = Console.ReadLine();
-
-    if (string.IsNullOrWhiteSpace(operatorType))
-    {
-        Console.WriteLine("No Type entered.");
-        return;
-    }
-
     Console.WriteLine("Enter Operator Version:");
     var operatorVersion = Console.ReadLine();
 
@@ -105,7 +96,7 @@ async Task scanOperator()
         return;
     }
 
-    await SendScan(operatorUid, operatorId, operatorType, operatorVersion, operatorSignature);
+    await SendScan(operatorUid, operatorId, operatorVersion, operatorSignature);
 
     Console.WriteLine($"Operator UID scanned: {operatorUid}");
 
@@ -136,15 +127,6 @@ async Task scanAsset()
         return;
     }
 
-    Console.WriteLine("Enter Asset Type:");
-    var assetType = Console.ReadLine();
-
-    if (string.IsNullOrWhiteSpace(assetType))
-    {
-        Console.WriteLine("No Type entered.");
-        return;
-    }
-
     Console.WriteLine("Enter Asset Version:");
     var assetVersion = Console.ReadLine();
 
@@ -163,7 +145,7 @@ async Task scanAsset()
         return;
     }
 
-    await SendScan(assetUid, assetId, assetType, assetVersion, assetSignature);
+    await SendScan(assetUid, assetId, assetVersion, assetSignature);
 
     Console.WriteLine($"Asset UID scanned: {assetUid}");
 
@@ -172,7 +154,7 @@ async Task scanAsset()
     Console.ReadKey();
 }
 
-async Task SendScan(string tagUid, string tagId, string tagType, string tagVersion, string tagSignature)
+async Task SendScan(string tagUid, string tagId, string tagVersion, string tagSignature)
 {
     if (string.IsNullOrWhiteSpace(tagUid))
     {
@@ -185,7 +167,6 @@ async Task SendScan(string tagUid, string tagId, string tagType, string tagVersi
     {
         tagUid = tagUid,
         tagId = tagId,
-        tagType = tagType,
         tagVersion = tagVersion,
         tagSignature = tagSignature
     };
