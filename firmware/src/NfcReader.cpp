@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <cstring>
 
 Adafruit_PN532 nfc(AppConfig::SDA_PIN, AppConfig::SCL_PIN);
 
@@ -40,57 +41,195 @@ bool NfcReader::start() {
     return true;
 }
 
-std::optional<std::string> NfcReader::readTag() {
-    uint8_t uid[7];
-    uint8_t uidLength;
+
+std::optional<TagUidData> NfcReader::readTag() {
+    uint8_t uid[7] = {0};
+    uint8_t uidLength = 0;
     std::string uidString;
 
     bool success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength, 1000);
 
-    if (success) {
-        Serial.println("Tag detected!");
-
-        uidString = uidToString(uid, uidLength);
-
-        Serial.print("UID length: ");
-        Serial.println(uidLength);
-
-        Serial.print("UID: ");
-        Serial.println(uidString.c_str());
-        
-        Serial.println("Remove tag...");
-        
-        return uidString;
+    if (!success) {
+        return std::nullopt;
     }
+    
+    
+    Serial.println("Tag detected!");
 
-    return std::nullopt;
+    uidString = uidToString(uid, uidLength);
+
+    Serial.print("UID length: ");
+    Serial.println(uidLength);
+
+    Serial.print("UID: ");
+    Serial.println(uidString.c_str());
+
+    TagUidData tag;
+    tag.tagUidLength = uidLength;
+
+    for (uint8_t i = 0; i < uidLength; i++) {
+        tag.tagUid[i] = uid[i];
+    }
+    
+    Serial.println("Remove tag...");
+    
+    return tag;
 }
 
-bool NfcReader::writeTag() {
-    uint8_t uid[7];
-    uint8_t uidLength;
-    std::string uidString;
+bool NfcReader::writeStringToTag(
+        const uint8_t* uid,
+        uint8_t uidLength,
+        uint8_t blockNumber,
+        const std::string& value) {
+    //String length can't be longer than 15 characters, leaving a byte for '\0'
+    if (value.length() > 15) {
+        Serial.printf(
+            "Value for block %u is too long. Maximum is 15 characters.\n",
+            blockNumber
+        );
 
-    bool success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength, 1000);
+        return false;
+    }
 
-    if (success) {
-        Serial.println("Tag detected!");
+    uint8_t blockData[16] = {0};
 
-        uidString = uidToString(uid, uidLength);
+    std::memcpy(
+        blockData,
+        value.data(),
+        value.length()
+    );
 
-        Serial.print("UID length: ");
-        Serial.println(uidLength);
+    Serial.println();
 
-        Serial.print("UID: ");
-        Serial.println(uidString.c_str());
+    for (uint8_t i = 0; i < uidLength; i++) {
+        Serial.printf("%02X ", uid[i]);
+    }
 
-        //Send to backend and wait for response
+    Serial.println();
+
+    bool authenticated = nfc.mifareclassic_AuthenticateBlock(
+        const_cast<uint8_t*>(uid),
+        uidLength,
+        blockNumber,
+        1,
+        AppConfig::DEFAULT_KEY_A
+    );
+    
+    if (!authenticated) {
+        Serial.printf(
+            "Authentication failed for block %u\n",
+            blockNumber
+        );
+
+        return false;
+    }
+    
+    bool written = nfc.mifareclassic_WriteDataBlock(
+        blockNumber,
+        blockData
+    );
+
+    if (!written) {
+        Serial.printf(
+            "Writing string to block %u failed\n",
+            blockNumber
+        );
+
+        return false;
+    }
+    
+    Serial.printf(
+        "Successfully wrote '%s' to block %u\n",
+        value.c_str(),
+        blockNumber
+    );
+
+    return true;
+}
+
+bool NfcReader::writeSignatureToTag(
+        const uint8_t* uid,
+        uint8_t uidLength,
+        uint8_t blockNumber,
+        const uint8_t signature[16]) {
+
+    bool authenticated = nfc.mifareclassic_AuthenticateBlock(
+        const_cast<uint8_t*>(uid),
+        uidLength,
+        blockNumber,
+        0,
+        AppConfig::DEFAULT_KEY_A
+    );
+    
+    if (!authenticated) {
+        Serial.printf(
+            "Authentication failed for block %u\n",
+            blockNumber
+        );
+
+        return false;
+    }
+    
+    bool written = nfc.mifareclassic_WriteDataBlock(
+        blockNumber,
+        const_cast<uint8_t*>(signature)
+    );
+
+    if (!written) {
+        Serial.printf(
+            "Writing signature to block %u failed\n",
+            blockNumber
+        );
+
+        return false;
+    }
+    
+    Serial.println("Signature written successfully");
+    return true;
+}
+
+bool NfcReader::writeDataToTag(
+            const uint8_t* uid,
+            uint8_t uidLength,
+            const std::string& idValue,
+            const std::string& versionValue,
+            const uint8_t signatureValue[16]) {
         
+        bool idWritten = writeStringToTag(
+            uid,
+            uidLength,
+            AppConfig::ID_BLOCK,
+            idValue
+        );
+
+        if (!idWritten) {
+            return false;
+        }
+        
+        bool versionWritten = writeStringToTag(
+            uid,
+            uidLength,
+            AppConfig::VERSION_BLOCK,
+            versionValue
+        );
+
+        if (!versionWritten) {
+            return false;
+        }
+
+        bool signatureWritten = writeSignatureToTag(
+            uid,
+            uidLength,
+            AppConfig::SIGNATURE_BLOCK,
+            signatureValue
+        );
+
+        if (!signatureWritten) {
+            return false;
+        }
+
         return true;
     }
-
-    return false;
-}
 
 std::string NfcReader::uidToString(std::uint8_t* uid, std::uint8_t uidLength) {
     std::ostringstream output;

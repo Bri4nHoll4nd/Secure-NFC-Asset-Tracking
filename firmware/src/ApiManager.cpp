@@ -50,3 +50,6 @@ bool ApiManager::sendTagUid(std::string tagUid) {
 
     return statusCode >= 200 && statusCode < 300;
 }
+
+std::optional<TagWriteData> getWriteData() {
+}

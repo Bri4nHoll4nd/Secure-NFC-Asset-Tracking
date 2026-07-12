@@ -3,6 +3,7 @@
 #include "TagData.h"
 #include "ApiManager.h"
 
+#include <Adafruit_PN532.h>
 #include <optional>
 #include <string>
 
@@ -12,10 +13,28 @@ class NfcReader {
         bool start();
 
         //Read tag data and store it
-        std::optional<std::string> readTag();
+        std::optional<TagUidData> readTag();
 
-        //Write tag data
-        bool writeTag();
+        //Write string to tag
+        bool writeStringToTag(
+            const uint8_t* uid,
+            uint8_t uidLength,
+            uint8_t blockNumber,
+            const std::string& value);
+
+        //Write byte to tag
+        bool writeSignatureToTag(
+            const uint8_t* uid,
+            uint8_t uidLength,
+            uint8_t blockNumber,
+            const uint8_t signatureValue[16]);
+
+        bool writeDataToTag(
+            const uint8_t* uid,
+            uint8_t uidLength,
+            const std::string& idValue,
+            const std::string& versionValue,
+            const uint8_t signatureValue[16]);
 
     private:
         std::string uidToString(std::uint8_t* uid, std::uint8_t uidLength);

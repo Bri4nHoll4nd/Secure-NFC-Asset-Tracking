@@ -1,6 +1,27 @@
 ﻿using System.Net.Http.Json;
+using System.Text;
+using System.Security.Cryptography;
 
 bool running = true;
+
+string tagUid = "25DA6D06";
+string tagId = "A0-00AA";
+string tagVersion = "1.0";
+string secretKey = "pizza-party-time-48";
+
+string data =
+    $"{tagUid.Length}:{tagUid}" +
+    $"{tagId.Length}:{tagId}" +
+    $"{tagVersion.Length}:{tagVersion}";
+
+byte[] keyBytes = Encoding.UTF8.GetBytes(secretKey);
+byte[] dataBytes = Encoding.UTF8.GetBytes(data);
+
+using var hmac = new HMACSHA256(keyBytes);
+
+byte[] fullSignature = hmac.ComputeHash(dataBytes);
+
+byte[] signature = fullSignature[..16];
 
 while (running)
 {
@@ -12,6 +33,8 @@ while (running)
     Console.WriteLine("3. Create Operator");
     Console.WriteLine("4. Create Asset");
     Console.WriteLine("0. Exit");
+
+    Console.WriteLine($"Signature: {Convert.ToHexString(signature)}");
 
     var input = Console.ReadLine();
 
